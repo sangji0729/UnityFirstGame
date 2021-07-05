@@ -25,27 +25,30 @@ public class PlayerController : MonoBehaviour
     private bool isjump;
     private bool infiniteJump;
     private bool mouseDown;
+    private bool fDown; //??
     private bool isWalk;
     private bool isRun;
-    private bool sDown1;//무기교체
+    private bool sDown1;//????????
     private bool sDown2;
     private bool sDown3;
     private bool sDown4;
     private bool isSwap;
+    private bool isFireReady; //?? ?? 
 
 
     private float mouseLocation;
     private float jumpPower = 5;
 
-    bool iDown;//아이템입수
+    bool iDown;//??????????
 
     Animator anim;
     Rigidbody playerRB;
     Camera characterCamera;
 
     GameObject nearObject;
-    GameObject equipWeapon;
+    Weapon equipWeapon;
     int equipWeaponIndex = -1;
+    float fireDelay;//?? ??? 
     private void Awake()
     {
         playerRB = GetComponent<Rigidbody>();
@@ -66,6 +69,7 @@ public class PlayerController : MonoBehaviour
     {
         Move();
         Jump();
+        Attack();
        // LookMouseCursor();
         look();
         Interaction();
@@ -79,8 +83,9 @@ public class PlayerController : MonoBehaviour
         verticalInput = Input.GetAxis("Vertical");
         horizontalInput = Input.GetAxis("Horizontal");
         isRun = Input.GetButton("Run");
-        iDown = Input.GetButtonDown("Interaction");//아이템획득
-        sDown1 = Input.GetButtonDown("Swap1");//무기교체
+        fDown = Input.GetButtonDown("Fire1");
+        iDown = Input.GetButtonDown("Interaction");//??????????
+        sDown1 = Input.GetButtonDown("Swap1");//????????
         sDown2 = Input.GetButtonDown("Swap2");
         sDown3 = Input.GetButtonDown("Swap3");
         //sDown4 = Input.GetButtonDown("Swap4");
@@ -90,7 +95,7 @@ public class PlayerController : MonoBehaviour
 
         moveVec = new Vector3(horizontalInput, 0, verticalInput).normalized;
 
-        if (isRun) //달리기 상태
+        if (isRun) //?????? ????
         {
             speed = 2;
             transform.position += moveVec * speed * Time.deltaTime;
@@ -114,7 +119,7 @@ public class PlayerController : MonoBehaviour
         anim.SetBool("isJump", isjump);
         anim.SetTrigger("doJump");
 
-        if (isjump && !infiniteJump && !isSwap) //점프
+        if (isjump && !infiniteJump && !isSwap) //????
         {
             playerRB.AddForce(Vector3.up * jumpPower, ForceMode.Impulse);
             infiniteJump = true;
@@ -122,8 +127,26 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    void Attack()
+    {
+        if(equipWeapon == null)
+        
+            return;
+        
+        //?? ???? ??? ???? ???? ??? ??
+        fireDelay += Time.deltaTime;
+        isFireReady = equipWeapon.rate < fireDelay;
+
+        if(fDown && isFireReady && !isSwap)
+        {
+            equipWeapon.Use();//Weapon ????? ?? Use ?? ??
+            anim.SetTrigger("doSwing");
+            fireDelay = 0;
+        }
+    }
+
     void OnCollisionEnter(Collision collision)
-    {   //바닥 접촉
+    {   //???? ????
         if(collision.gameObject.tag == "Floor")
         {
             anim.SetBool("isJump", false);
@@ -140,8 +163,8 @@ public class PlayerController : MonoBehaviour
             switch (item.type)
             {
                 case Item.Type.Ammo:
-                    ammo += item.value; //총알 획득
-                    if(ammo > maxAmmo)  //총알 최대치에서 총알 획득시 최대값 유지
+                    ammo += item.value; //???? ????
+                    if(ammo > maxAmmo)  //???? ?????????? ???? ?????? ?????? ????
                     {
                         ammo = maxAmmo;
                     }
@@ -167,7 +190,7 @@ public class PlayerController : MonoBehaviour
                     hasGrenades += item.value;
                     break;
             }
-            Destroy(other.gameObject); // 아이템 획득후 아이템 파괴
+            Destroy(other.gameObject); // ?????? ?????? ?????? ????
         }
     }
 
@@ -189,9 +212,9 @@ public class PlayerController : MonoBehaviour
         }
     }
     void Swap()
-    { //무기교체
-        if (sDown1 && (!hasWeapon[0] || equipWeaponIndex == 0)) // 무기를 미획득시 1,2,3,번을 눌러도 무반응효과                                                  
-        {                                                        // 현재 무기1개 획득시 다른무기도 획득되는 버그 있음. 무기 교체시 이동속도 빨라지는 버그 존재. 현재 수정중
+    { //????????
+        if (sDown1 && (!hasWeapon[0] || equipWeaponIndex == 0)) // ?????? ???????? 1,2,3,???? ?????? ??????????                                                  
+        {                                                        // ???? ????1?? ?????? ?????????? ???????? ???? ????. ???? ?????? ???????? ???????? ???? ????. ???? ??????
             return;
         }
         if (sDown2 && (!hasWeapon[0] || equipWeaponIndex == 1))
@@ -217,11 +240,11 @@ public class PlayerController : MonoBehaviour
         if ((sDown1 || sDown2 || sDown3) && !isjump)
         {
             if(equipWeapon != null)
-                 equipWeapon.SetActive(false);
+                 equipWeapon.gameObject.SetActive(false);
 
             equipWeaponIndex = weaponIndex;
-            equipWeapon = weapons[weaponIndex];
-            equipWeapon.SetActive(true);
+            equipWeapon = weapons[weaponIndex].GetComponent<Weapon>(); ;
+            equipWeapon.gameObject.SetActive(true);
 
             anim.SetTrigger("doSwap");
 
@@ -236,7 +259,7 @@ public class PlayerController : MonoBehaviour
         speed += 0.5f;
         isSwap = false;
     }
-    void Interaction() // 상호작용
+    void Interaction() // ????????
     {
         if (iDown && nearObject != null)
         {
@@ -253,7 +276,7 @@ public class PlayerController : MonoBehaviour
 
     void look()
     {
-        //움직이는 방향으로 캐릭터가 바라보기
+        //???????? ???????? ???????? ????????
         transform.LookAt(transform.position + moveVec);
     }
 
