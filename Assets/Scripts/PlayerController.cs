@@ -18,26 +18,26 @@ public class PlayerController : MonoBehaviour
     public int maxCoin;
     public int maxHealth;
 
-    private float speed = 1.7f;
-    private float verticalInput;
-    private float horizontalInput;
-    private Vector3 moveVec;
-    private bool isjump;
-    private bool infiniteJump;
-    private bool mouseDown;
-    private bool fDown; //??
-    private bool isWalk;
-    private bool isRun;
-    private bool sDown1;//????????
-    private bool sDown2;
-    private bool sDown3;
-    private bool sDown4;
-    private bool isSwap;
-    private bool isFireReady; //?? ?? 
+    float speed = 1.7f;
+    float verticalInput;
+    float horizontalInput;
+    Vector3 moveVec;
+    bool isjump;
+    bool infiniteJump;
+    bool mouseDown;
+    bool fDown; //공격
+    bool isWalk;
+    bool isRun;
+    bool sDown1;//????????
+    bool sDown2;
+    bool sDown3;
+    bool sDown4;
+    bool isSwap;
+    bool isFireReady = true; //공격 준비
 
 
-    private float mouseLocation;
-    private float jumpPower = 5;
+    float mouseLocation;
+    float jumpPower = 5;
 
     bool iDown;//??????????
 
@@ -48,7 +48,7 @@ public class PlayerController : MonoBehaviour
     GameObject nearObject;
     Weapon equipWeapon;
     int equipWeaponIndex = -1;
-    float fireDelay;//?? ??? 
+    float fireDelay;//공격 딜레이
     private void Awake()
     {
         playerRB = GetComponent<Rigidbody>();
@@ -74,6 +74,7 @@ public class PlayerController : MonoBehaviour
         look();
         Interaction();
         Swap();
+        
 
 
     }
@@ -83,7 +84,7 @@ public class PlayerController : MonoBehaviour
         verticalInput = Input.GetAxis("Vertical");
         horizontalInput = Input.GetAxis("Horizontal");
         isRun = Input.GetButton("Run");
-        fDown = Input.GetButtonDown("Fire1");
+        fDown = Input.GetButton("Fire1");//공격
         iDown = Input.GetButtonDown("Interaction");//??????????
         sDown1 = Input.GetButtonDown("Swap1");//????????
         sDown2 = Input.GetButtonDown("Swap2");
@@ -102,7 +103,7 @@ public class PlayerController : MonoBehaviour
             isRun = false;
            
         }
-        if (isSwap)
+        if (isSwap || !isFireReady) // 무기 스왑 및 공격중엔 이동불가
         {
             moveVec = Vector3.zero;
         }
@@ -130,17 +131,17 @@ public class PlayerController : MonoBehaviour
     void Attack()
     {
         if(equipWeapon == null)
-        
             return;
         
-        //?? ???? ??? ???? ???? ??? ??
+        //공격 딜레이에 시간을 더해주고 공격가능 여부를 확인
         fireDelay += Time.deltaTime;
         isFireReady = equipWeapon.rate < fireDelay;
 
         if(fDown && isFireReady && !isSwap)
         {
-            equipWeapon.Use();//Weapon ????? ?? Use ?? ??
-            anim.SetTrigger("doSwing");
+            equipWeapon.Use();//Weapon 스크립에 속의 Use 함수 사용
+            //현재 들고있는 무기가 근접무기면 doSwing, 원거리무기면 doShot 애니메이션 작동(삼항연산자)
+            anim.SetTrigger(equipWeapon.type == Weapon.Type.Melee ? "doSwing" : "doShot");
             fireDelay = 0;
         }
     }
@@ -243,7 +244,7 @@ public class PlayerController : MonoBehaviour
                  equipWeapon.gameObject.SetActive(false);
 
             equipWeaponIndex = weaponIndex;
-            equipWeapon = weapons[weaponIndex].GetComponent<Weapon>(); ;
+            equipWeapon = weapons[weaponIndex].GetComponent<Weapon>();
             equipWeapon.gameObject.SetActive(true);
 
             anim.SetTrigger("doSwap");
