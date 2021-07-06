@@ -14,7 +14,7 @@ public class PlayerController : MonoBehaviour
     public int health;
     public int hasGrenades;
 
-    public int maxAmmo;
+    public int maxAmmo; //íƒ„ì•½ ìµœëŒ€ ì†Œì§€ëŸ‰
     public int maxCoin;
     public int maxHealth;
 
@@ -25,7 +25,8 @@ public class PlayerController : MonoBehaviour
     bool isjump;
     bool infiniteJump;
     bool mouseDown;
-    bool fDown; //°ø°Ý
+    bool fDown; //????
+    bool rDown;//ìž¬ìž¥ì „
     bool isWalk;
     bool isRun;
     bool sDown1;//????????
@@ -33,7 +34,9 @@ public class PlayerController : MonoBehaviour
     bool sDown3;
     bool sDown4;
     bool isSwap;
-    bool isFireReady = true; //°ø°Ý ÁØºñ
+    bool isReload; 
+    bool isFireReady = true; //???? ????
+    
 
 
     float mouseLocation;
@@ -48,13 +51,12 @@ public class PlayerController : MonoBehaviour
     GameObject nearObject;
     Weapon equipWeapon;
     int equipWeaponIndex = -1;
-    float fireDelay;//°ø°Ý µô·¹ÀÌ
+    float fireDelay;//???? ??????
     private void Awake()
     {
         playerRB = GetComponent<Rigidbody>();
         anim = GetComponentInChildren<Animator>();
         characterCamera = GetComponentInChildren<Camera>();
-        mouseDown = Input.GetMouseButtonDown(0);
     }
 
 
@@ -70,7 +72,10 @@ public class PlayerController : MonoBehaviour
         Move();
         Jump();
         Attack();
-       // LookMouseCursor();
+        Reload();
+
+        mouseDown = Input.GetMouseButtonDown(0);
+        LookMouseCursor();
         look();
         Interaction();
         Swap();
@@ -84,7 +89,8 @@ public class PlayerController : MonoBehaviour
         verticalInput = Input.GetAxis("Vertical");
         horizontalInput = Input.GetAxis("Horizontal");
         isRun = Input.GetButton("Run");
-        fDown = Input.GetButton("Fire1");//°ø°Ý
+        fDown = Input.GetButton("Fire1");//????
+        rDown = Input.GetButtonDown("Reload");
         iDown = Input.GetButtonDown("Interaction");//??????????
         sDown1 = Input.GetButtonDown("Swap1");//????????
         sDown2 = Input.GetButtonDown("Swap2");
@@ -103,7 +109,7 @@ public class PlayerController : MonoBehaviour
             isRun = false;
            
         }
-        if (isSwap || !isFireReady) // ¹«±â ½º¿Ò ¹× °ø°ÝÁß¿£ ÀÌµ¿ºÒ°¡
+        if (isSwap || !isFireReady || isReload) // ???? ???? ?? ???????? ????????
         {
             moveVec = Vector3.zero;
         }
@@ -133,17 +139,43 @@ public class PlayerController : MonoBehaviour
         if(equipWeapon == null)
             return;
         
-        //°ø°Ý µô·¹ÀÌ¿¡ ½Ã°£À» ´õÇØÁÖ°í °ø°Ý°¡´É ¿©ºÎ¸¦ È®ÀÎ
+        //???? ???????? ?????? ???????? ???????? ?????? ????
         fireDelay += Time.deltaTime;
         isFireReady = equipWeapon.rate < fireDelay;
 
         if(fDown && isFireReady && !isSwap)
         {
-            equipWeapon.Use();//Weapon ½ºÅ©¸³¿¡ ¼ÓÀÇ Use ÇÔ¼ö »ç¿ë
-            //ÇöÀç µé°íÀÖ´Â ¹«±â°¡ ±ÙÁ¢¹«±â¸é doSwing, ¿ø°Å¸®¹«±â¸é doShot ¾Ö´Ï¸ÞÀÌ¼Ç ÀÛµ¿(»ïÇ×¿¬»êÀÚ)
+            equipWeapon.Use();//Weapon ???????? ???? Use ???? ????
+            //???? ???????? ?????? ?????????? doSwing, ???????????? doShot ?????????? ????(??????????)
             anim.SetTrigger(equipWeapon.type == Weapon.Type.Melee ? "doSwing" : "doShot");
             fireDelay = 0;
         }
+    }
+
+    void Reload()
+    {
+        if(equipWeapon == null)
+            return;
+        if (equipWeapon.type == Weapon.Type.Melee)
+            return;
+        if (ammo <= 0)
+            return;
+        if(rDown && !isjump && !isSwap && isFireReady)
+        {
+            anim.SetTrigger("doReload");
+            isReload = true;
+
+            Invoke("ReloadOut", 1.7f);//ìž¬ìž¥ì „ì†ë„
+        }
+        
+    }
+
+    void ReloadOut()
+    {
+        int reAmmo = ammo < equipWeapon.maxAmmo ? ammo : equipWeapon.maxAmmo; //reAmmo = í˜„ìž¬ ë“¤ê³ ìžˆëŠ” ë¬´ê¸°ì˜ íƒ„ì°½ì† íƒ„ì•½ì´ ìµœëŒ€ ìž¥íƒ„ìˆ˜ë³´ë‹¤ ì ë‹¤ëŠ” ì¡°ê±´ì´ ì°¸ì¼ë• í˜„ìž¬ ìž¥íƒ„ìˆ˜, ê±°ì§“ì¼ë• ìµœëŒ€ ìž¥íƒ„ìˆ˜
+        equipWeapon.curAmmo = reAmmo;//í˜„ìž¬ ë“¤ê³ ìžˆëŠ” ë¬´ê¸°ì˜ íƒ„ì°½ì† íƒ„ì•½ìˆ˜ëŠ” reAmmo
+        ammo -= reAmmo; //ìž¬ìž¥ì „ì‹œ í”Œë ˆì´ì–´ê°€ ê°–ê³ ìžˆëŠ” íƒ„ì•½ì€ ê·¸ë§Œí¼ ì¤„ì–´ë“¬
+        isReload = false;
     }
 
     void OnCollisionEnter(Collision collision)
@@ -215,18 +247,19 @@ public class PlayerController : MonoBehaviour
     void Swap()
     { //????????
         if (sDown1 && (!hasWeapon[0] || equipWeaponIndex == 0)) // ?????? ???????? 1,2,3,???? ?????? ??????????                                                  
-        {                                                        // ???? ????1?? ?????? ?????????? ???????? ???? ????. ???? ?????? ???????? ???????? ???? ????. ???? ??????
+        {                                                       // ???? ????1?? ?????? ?????????? ???????? ???? ????. ???? ?????? ???????? ???????? ???? ????. ???? ??????
+                                                                // hasWeapon ë°°ì—´ìˆ˜ ìˆ˜ì •ìœ¼ë¡œ ë²„ê·¸í”½ìŠ¤
             return;
         }
-        if (sDown2 && (!hasWeapon[0] || equipWeaponIndex == 1))
+        if (sDown2 && (!hasWeapon[1] || equipWeaponIndex == 1))
         {
             return;
         }
-        if (sDown3 && (!hasWeapon[0] || equipWeaponIndex == 2))
+        if (sDown3 && (!hasWeapon[2] || equipWeaponIndex == 2))
         {
             return;
         }
-       /* if (sDown4 && (!hasWeapon[0] || equipWeaponIndex == 3))
+       /* if (sDown4 && (!hasWeapon[3] || equipWeaponIndex == 3))
         {
             return;
         } */
@@ -283,14 +316,16 @@ public class PlayerController : MonoBehaviour
 
     void LookMouseCursor()
     {
-            Ray ray = characterCamera.ScreenPointToRay(Input.mousePosition);
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             RaycastHit hitResult;
         if (mouseDown)
         {
+            Debug.Log("mouse down");
             if (Physics.Raycast(ray, out hitResult))
             {
                 Vector3 mourDir = new Vector3(hitResult.point.x, transform.position.y, hitResult.point.z) - transform.position;
                 transform.forward = mourDir;
+                Debug.Log("hit result : " +  hitResult);
             }
         }
     }
