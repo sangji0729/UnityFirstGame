@@ -25,6 +25,7 @@ public class PlayerController : MonoBehaviour
     bool isjump;
     bool infiniteJump;
     bool mouseDown;
+    bool walkMouseDown;//마우스 왼쪽버튼 이동
     bool fDown; //????
     bool rDown;//재장전
     bool isWalk;
@@ -38,6 +39,9 @@ public class PlayerController : MonoBehaviour
     bool isFireReady = true; //???? ????
     
 
+    private Camera camera;
+    private bool isMove; //이 3개는 마우스 이동시 필요한 변수
+    private Vector3 destination;
 
     float mouseLocation;
     float jumpPower = 5;
@@ -47,7 +51,6 @@ public class PlayerController : MonoBehaviour
     Animator anim;
     Rigidbody playerRB;
     Camera characterCamera;
-
     GameObject nearObject;
     Weapon equipWeapon;
     int equipWeaponIndex = -1;
@@ -57,6 +60,7 @@ public class PlayerController : MonoBehaviour
         playerRB = GetComponent<Rigidbody>();
         anim = GetComponentInChildren<Animator>();
         characterCamera = GetComponentInChildren<Camera>();
+        camera = Camera.main;   
     }
 
 
@@ -74,7 +78,10 @@ public class PlayerController : MonoBehaviour
         Attack();
         Reload();
 
-        mouseDown = Input.GetMouseButtonDown(0);
+        walkMouseDown = Input.GetMouseButton(0);
+        MouseWalk();
+
+        mouseDown = Input.GetMouseButton(0);
         LookMouseCursor();
         look();
         Interaction();
@@ -89,7 +96,7 @@ public class PlayerController : MonoBehaviour
         verticalInput = Input.GetAxis("Vertical");
         horizontalInput = Input.GetAxis("Horizontal");
         isRun = Input.GetButton("Run");
-        fDown = Input.GetButton("Fire1");//????
+        fDown = Input.GetButton("Fire2");//????
         rDown = Input.GetButtonDown("Reload");
         iDown = Input.GetButtonDown("Interaction");//??????????
         sDown1 = Input.GetButtonDown("Swap1");//????????
@@ -248,7 +255,7 @@ public class PlayerController : MonoBehaviour
     { //????????
         if (sDown1 && (!hasWeapon[0] || equipWeaponIndex == 0)) // ?????? ???????? 1,2,3,???? ?????? ??????????                                                  
         {                                                       // ???? ????1?? ?????? ?????????? ???????? ???? ????. ???? ?????? ???????? ???????? ???? ????. ???? ??????
-                                                                // hasWeapon 배열수 수정으로 버그픽스
+                                                                // hasWeapon 배열수 수정으로 버그픽스 
             return;
         }
         if (sDown2 && (!hasWeapon[1] || equipWeaponIndex == 1))
@@ -328,5 +335,51 @@ public class PlayerController : MonoBehaviour
                 Debug.Log("hit result : " +  hitResult);
             }
         }
+    }
+
+    void MouseWalk()
+    {
+        if (!isSwap || isFireReady || !isReload)
+        {
+            if (walkMouseDown)
+            {
+                Ray ray = camera.ScreenPointToRay(Input.mousePosition);
+                RaycastHit hitResult2;
+                if (Physics.Raycast(ray, out hitResult2))
+                {
+                    SetDestination(hitResult2.point);
+                }
+            }
+
+            if (isWalk == true)
+            {
+                Vector3 des = destination - transform.position;
+                transform.position += des.normalized * Time.deltaTime * speed;
+
+                if (isRun == true)
+                {
+                    speed = 2f;
+                    transform.position += des.normalized * Time.deltaTime * speed;
+
+                }
+            }
+
+            if (Vector3.Distance(transform.position, destination) <= 0.1f)
+            {
+                isWalk = false;
+                isRun = false;
+                anim.SetBool("isWalk", false);
+            }
+        }
+    }
+
+    private void SetDestination(Vector3 dest)
+    {
+        destination = dest;
+        isWalk = true;
+        //isRun = true;
+        anim.SetBool("isWalk", true);
+       // anim.SetTrigger("isRun");
+       
     }
 }
