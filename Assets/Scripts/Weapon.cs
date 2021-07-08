@@ -55,7 +55,7 @@ public class Weapon : MonoBehaviour
         GameObject intantBullet = Instantiate(bullet, bulletPos.position, bulletPos.rotation);//총알 오브젝트
         Rigidbody bulletRigid = intantBullet.GetComponent<Rigidbody>();
         bulletRigid.velocity = bulletPos.forward * 50;//총알속도
-
+        
         yield return null;
 
         //2. 탄피 배출

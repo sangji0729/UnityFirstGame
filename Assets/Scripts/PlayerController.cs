@@ -25,6 +25,7 @@ public class PlayerController : MonoBehaviour
     bool isjump;
     bool infiniteJump;
     bool mouseDown;
+    bool mouseDown2;
     bool walkMouseDown;//마우스 왼쪽버튼 이동
     bool fDown; //????
     bool rDown;//재장전
@@ -55,6 +56,7 @@ public class PlayerController : MonoBehaviour
     Weapon equipWeapon;
     int equipWeaponIndex = -1;
     float fireDelay;//???? ??????
+
     private void Awake()
     {
         playerRB = GetComponent<Rigidbody>();
@@ -79,10 +81,14 @@ public class PlayerController : MonoBehaviour
         Reload();
 
         walkMouseDown = Input.GetMouseButton(0);
-        MouseWalk();
+       // MouseWalk();
 
         mouseDown = Input.GetMouseButton(0);
         LookMouseCursor();
+
+        mouseDown2 = Input.GetMouseButton(1);
+        LookMouseCursor2();
+
         look();
         Interaction();
         Swap();
@@ -93,38 +99,65 @@ public class PlayerController : MonoBehaviour
 
     void Move()
     {
-        verticalInput = Input.GetAxis("Vertical");
-        horizontalInput = Input.GetAxis("Horizontal");
-        isRun = Input.GetButton("Run");
-        fDown = Input.GetButton("Fire2");//????
-        rDown = Input.GetButtonDown("Reload");
-        iDown = Input.GetButtonDown("Interaction");//??????????
-        sDown1 = Input.GetButtonDown("Swap1");//????????
-        sDown2 = Input.GetButtonDown("Swap2");
-        sDown3 = Input.GetButtonDown("Swap3");
-        //sDown4 = Input.GetButtonDown("Swap4");
-
-        anim.SetBool("isWalk", moveVec != Vector3.zero);
-        anim.SetBool("isRun", isRun);
-
-        moveVec = new Vector3(horizontalInput, 0, verticalInput).normalized;
-
-        if (isRun) //?????? ????
+        if (Input.GetMouseButton(0))
         {
-            speed = 2;
+            Ray ray = camera.ScreenPointToRay(Input.mousePosition);
+            RaycastHit hitResult2;
+            if (Physics.Raycast(ray, out hitResult2))
+            {
+                SetDestination(hitResult2.point);
+            }
+            Vector3 moveVec = destination - transform.position;
+            
+            transform.position += moveVec.normalized * Time.deltaTime * speed;
+            if (Vector3.Distance(transform.position, destination) <= 0.1f)
+            {
+                destination = Vector3.zero;
+            }
+        }
+        else
+        {
+            verticalInput = Input.GetAxis("Vertical");
+            horizontalInput = Input.GetAxis("Horizontal");
+
+        }
+        if (Input.GetButtonDown("Run"))
+        {
+            isRun = !isRun; //달리기 토글 설정
+            anim.SetBool("isRun", isRun);
+        }
+            //isRun = Input.GetButton("Run");
+            fDown = Input.GetButton("Fire2");//????
+            rDown = Input.GetButtonDown("Reload");
+            iDown = Input.GetButtonDown("Interaction");//??????????
+            sDown1 = Input.GetButtonDown("Swap1");//????????
+            sDown2 = Input.GetButtonDown("Swap2");
+            sDown3 = Input.GetButtonDown("Swap3");
+            //sDown4 = Input.GetButtonDown("Swap4");
+
+            anim.SetBool("isWalk", moveVec != Vector3.zero);
+            //anim.SetBool("isRun", isRun);
+
+            moveVec = new Vector3(horizontalInput, 0, verticalInput).normalized;
+
+            if (isRun) //?????? ????
+            {
+                speed = 2;
+                transform.position += moveVec * speed * Time.deltaTime;
+            }
+            if (isSwap || !isFireReady || isReload) // ???? ???? ?? ???????? ????????
+            {
+                moveVec = Vector3.zero;
+            }
             transform.position += moveVec * speed * Time.deltaTime;
-            isRun = false;
-           
-        }
-        if (isSwap || !isFireReady || isReload) // ???? ???? ?? ???????? ????????
-        {
-            moveVec = Vector3.zero;
-        }
-        transform.position += moveVec * speed * Time.deltaTime;
-        
 
-      // transform.Translate(Vector3.forward * verticalInput * Time.deltaTime * speed);
-      // transform.Translate(Vector3.right * horizontalInput * Time.deltaTime * speed);
+
+            // transform.Translate(Vector3.forward * verticalInput * Time.deltaTime * speed);
+            // transform.Translate(Vector3.right * horizontalInput * Time.deltaTime * speed);
+           
+        
+        
+        
     }
 
     void Jump()
@@ -140,6 +173,16 @@ public class PlayerController : MonoBehaviour
             
         }
     }
+
+
+
+
+
+
+
+
+
+
 
     void Attack()
     {
@@ -209,6 +252,7 @@ public class PlayerController : MonoBehaviour
                         ammo = maxAmmo;
                     }
                     break;
+
                 case Item.Type.Coin:
                     coin += item.value;
                     if (coin > maxCoin)
@@ -216,6 +260,7 @@ public class PlayerController : MonoBehaviour
                         coin = maxCoin;
                     }
                     break;
+
                 case Item.Type.Health:
                     health += item.value;
                     if (health > maxHealth)
@@ -223,6 +268,7 @@ public class PlayerController : MonoBehaviour
                         health = maxHealth;
                     }
                     break;
+
                 case Item.Type.Grenade:
                     if (hasGrenades == maxHasGrenades)
                         return;
@@ -253,9 +299,8 @@ public class PlayerController : MonoBehaviour
     }
     void Swap()
     { //????????
-        if (sDown1 && (!hasWeapon[0] || equipWeaponIndex == 0)) // ?????? ???????? 1,2,3,???? ?????? ??????????                                                  
-        {                                                       // ???? ????1?? ?????? ?????????? ???????? ???? ????. ???? ?????? ???????? ???????? ???? ????. ???? ??????
-                                                                // hasWeapon 배열수 수정으로 버그픽스 
+        if (sDown1 && (!hasWeapon[0] || equipWeaponIndex == 0))                                            
+        {                                                       
             return;
         }
         if (sDown2 && (!hasWeapon[1] || equipWeaponIndex == 1))
@@ -337,49 +382,51 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    void MouseWalk()
+    void LookMouseCursor2()
     {
-        if (!isSwap || isFireReady || !isReload)
+        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        RaycastHit hitResult;
+        if (mouseDown2)
         {
-            if (walkMouseDown)
+            Debug.Log("mouse down2");
+            if (Physics.Raycast(ray, out hitResult))
             {
-                Ray ray = camera.ScreenPointToRay(Input.mousePosition);
-                RaycastHit hitResult2;
-                if (Physics.Raycast(ray, out hitResult2))
-                {
-                    SetDestination(hitResult2.point);
-                }
-            }
-
-            if (isWalk == true)
-            {
-                Vector3 des = destination - transform.position;
-                transform.position += des.normalized * Time.deltaTime * speed;
-
-                if (isRun == true)
-                {
-                    speed = 2f;
-                    transform.position += des.normalized * Time.deltaTime * speed;
-
-                }
-            }
-
-            if (Vector3.Distance(transform.position, destination) <= 0.1f)
-            {
-                isWalk = false;
-                isRun = false;
-                anim.SetBool("isWalk", false);
+                Vector3 mourDir = new Vector3(hitResult.point.x, transform.position.y, hitResult.point.z) - transform.position;
+                transform.forward = mourDir;
+                Debug.Log("hit result : " + hitResult);
             }
         }
     }
 
+    void MouseWalk()
+    {
+          if (!isSwap || isFireReady || !isReload || !fDown)
+            {
+                
+                
+                
+                if (isWalk == true)
+                {
+
+                    Vector3 des = destination - transform.position;
+
+                   
+                    transform.position += des.normalized * Time.deltaTime * speed;
+                    //Quaternion toRotation = Quaternion.FromToRotation(transform.forward, des.normalized);
+                    //transform.rotation = Quaternion.Lerp(transform.rotation, toRotation, speed * Time.deltaTime);
+                }
+                
+                if (Vector3.Distance(transform.position, destination) <= 0.1f)
+                {
+                    
+                }
+           }
+        
+    }
+
+   
     private void SetDestination(Vector3 dest)
     {
         destination = dest;
-        isWalk = true;
-        //isRun = true;
-        anim.SetBool("isWalk", true);
-       // anim.SetTrigger("isRun");
-       
     }
 }
