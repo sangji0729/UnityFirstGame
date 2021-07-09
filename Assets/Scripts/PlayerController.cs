@@ -43,6 +43,7 @@ public class PlayerController : MonoBehaviour
     private Camera camera;
     private bool isMove; //이 3개는 마우스 이동시 필요한 변수
     private Vector3 destination;
+   // private Vector3 moveVec;
 
     float mouseLocation;
     float jumpPower = 5;
@@ -81,7 +82,7 @@ public class PlayerController : MonoBehaviour
         Reload();
 
         walkMouseDown = Input.GetMouseButton(0);
-       // MouseWalk();
+        MouseWalk();
 
         mouseDown = Input.GetMouseButton(0);
         LookMouseCursor();
@@ -99,28 +100,20 @@ public class PlayerController : MonoBehaviour
 
     void Move()
     {
-        if (Input.GetMouseButton(0))
-        {
-            Ray ray = camera.ScreenPointToRay(Input.mousePosition);
-            RaycastHit hitResult2;
-            if (Physics.Raycast(ray, out hitResult2))
-            {
-                SetDestination(hitResult2.point);
-            }
+           
+        if(destination != Vector3.zero) { 
             Vector3 moveVec = destination - transform.position;
-            
+            moveVec.Normalize();
             transform.position += moveVec.normalized * Time.deltaTime * speed;
-            if (Vector3.Distance(transform.position, destination) <= 0.1f)
-            {
-                destination = Vector3.zero;
-            }
         }
         else
         {
             verticalInput = Input.GetAxis("Vertical");
             horizontalInput = Input.GetAxis("Horizontal");
 
-        }
+            moveVec = new Vector3(horizontalInput, 0, verticalInput).normalized;
+        }   
+
         if (Input.GetButtonDown("Run"))
         {
             isRun = !isRun; //달리기 토글 설정
@@ -138,26 +131,32 @@ public class PlayerController : MonoBehaviour
             anim.SetBool("isWalk", moveVec != Vector3.zero);
             //anim.SetBool("isRun", isRun);
 
-            moveVec = new Vector3(horizontalInput, 0, verticalInput).normalized;
+            
 
             if (isRun) //?????? ????
             {
                 speed = 2;
-                transform.position += moveVec * speed * Time.deltaTime;
+                transform.position += moveVec.normalized * speed * Time.deltaTime;
             }
             if (isSwap || !isFireReady || isReload) // ???? ???? ?? ???????? ????????
             {
                 moveVec = Vector3.zero;
             }
-            transform.position += moveVec * speed * Time.deltaTime;
+                transform.position += moveVec.normalized * speed * Time.deltaTime;
 
 
-            // transform.Translate(Vector3.forward * verticalInput * Time.deltaTime * speed);
-            // transform.Translate(Vector3.right * horizontalInput * Time.deltaTime * speed);
-           
-        
-        
-        
+        // transform.Translate(Vector3.forward * verticalInput * Time.deltaTime * speed);
+        // transform.Translate(Vector3.right * horizontalInput * Time.deltaTime * speed);
+
+        if (destination != Vector3.zero)
+        {
+            if (Vector3.Distance(transform.position, destination) <= 0.1f)
+            {
+                destination = Vector3.zero;
+            }
+        }   
+
+
     }
 
     void Jump()
@@ -173,16 +172,6 @@ public class PlayerController : MonoBehaviour
             
         }
     }
-
-
-
-
-
-
-
-
-
-
 
     void Attack()
     {
@@ -402,24 +391,24 @@ public class PlayerController : MonoBehaviour
     {
           if (!isSwap || isFireReady || !isReload || !fDown)
             {
-                
-                
-                
-                if (isWalk == true)
+                if (Input.GetMouseButtonDown(0))
                 {
+                     Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+                     RaycastHit hitResult2;
+                     if (Physics.Raycast(ray, out hitResult2))
+                     {
+                        SetDestination(hitResult2.point);
+                     }
 
-                    Vector3 des = destination - transform.position;
+                     moveVec = destination - transform.position;
 
                    
-                    transform.position += des.normalized * Time.deltaTime * speed;
+                    //transform.position += des.normalized * Time.deltaTime * speed;
                     //Quaternion toRotation = Quaternion.FromToRotation(transform.forward, des.normalized);
                     //transform.rotation = Quaternion.Lerp(transform.rotation, toRotation, speed * Time.deltaTime);
                 }
                 
-                if (Vector3.Distance(transform.position, destination) <= 0.1f)
-                {
-                    
-                }
+               
            }
         
     }
