@@ -38,6 +38,7 @@ public class PlayerController : MonoBehaviour
     bool isSwap;
     bool isReload; 
     bool isFireReady = true; //???? ????
+    bool isBorder;
     
 
     private Camera camera;
@@ -80,6 +81,7 @@ public class PlayerController : MonoBehaviour
         Jump();
         Attack();
         Reload();
+        //ReloadOut();
 
         walkMouseDown = Input.GetMouseButton(0);
         MouseWalk();
@@ -142,6 +144,7 @@ public class PlayerController : MonoBehaviour
             {
                 moveVec = Vector3.zero;
             }
+            if(!isBorder)
                 transform.position += moveVec.normalized * speed * Time.deltaTime;
 
 
@@ -199,7 +202,7 @@ public class PlayerController : MonoBehaviour
             return;
         if (ammo <= 0)
             return;
-        if(rDown && !isjump && !isSwap && isFireReady)
+        if(rDown && !isjump && !isSwap && isFireReady && !isReload)
         {
             anim.SetTrigger("doReload");
             isReload = true;
@@ -212,8 +215,11 @@ public class PlayerController : MonoBehaviour
     void ReloadOut()
     {
         int reAmmo = ammo < equipWeapon.maxAmmo ? ammo : equipWeapon.maxAmmo; //reAmmo = 현재 들고있는 무기의 탄창속 탄약이 최대 장탄수보다 적다는 조건이 참일땐 현재 장탄수, 거짓일땐 최대 장탄수
-        equipWeapon.curAmmo = reAmmo;//현재 들고있는 무기의 탄창속 탄약수는 reAmmo
-        ammo -= reAmmo; //재장전시 플레이어가 갖고있는 탄약은 그만큼 줄어듬
+        reAmmo -= equipWeapon.curAmmo;
+        equipWeapon.curAmmo += reAmmo;
+        ammo -= reAmmo;
+        //equipWeapon.curAmmo = reAmmo;//현재 들고있는 무기의 탄창속 탄약수는 reAmmo  
+        //ammo -= reAmmo; //재장전시 플레이어가 갖고있는 탄약은 그만큼 줄어듬
         isReload = false;
     }
 
@@ -365,6 +371,7 @@ public class PlayerController : MonoBehaviour
             if (Physics.Raycast(ray, out hitResult))
             {
                 Vector3 mourDir = new Vector3(hitResult.point.x, transform.position.y, hitResult.point.z) - transform.position;
+                mourDir.y = 0;
                 transform.forward = mourDir;
                 Debug.Log("hit result : " +  hitResult);
             }
@@ -381,6 +388,7 @@ public class PlayerController : MonoBehaviour
             if (Physics.Raycast(ray, out hitResult))
             {
                 Vector3 mourDir = new Vector3(hitResult.point.x, transform.position.y, hitResult.point.z) - transform.position;
+                mourDir.y = 0;
                 transform.forward = mourDir;
                 Debug.Log("hit result : " + hitResult);
             }
@@ -417,5 +425,22 @@ public class PlayerController : MonoBehaviour
     private void SetDestination(Vector3 dest)
     {
         destination = dest;
+    }
+
+    void FreezeRotation()
+    {
+        playerRB.angularVelocity = Vector3.zero;
+    }
+
+    void StopToWall()
+    {
+        Debug.DrawRay(transform.position, transform.forward * 5, Color.green);
+        isBorder = Physics.Raycast(transform.position, transform.forward, 1, LayerMask.GetMask("Wall")); //"Wall"태그 근처에서는 이동 불가 
+    }
+
+    void FixedUpdate()
+    {
+        FreezeRotation();
+        StopToWall();
     }
 }
