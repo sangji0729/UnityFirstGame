@@ -14,7 +14,7 @@ public class PlayerController : MonoBehaviour
     public int health;
     public int hasGrenades;
 
-    public int maxAmmo;
+    public int maxAmmo; //ÌÉÑÏïΩ ÏµúÎåÄ ÏÜåÏßÄÎüâ
     public int maxCoin;
     public int maxHealth;
 
@@ -25,7 +25,10 @@ public class PlayerController : MonoBehaviour
     bool isjump;
     bool infiniteJump;
     bool mouseDown;
-    bool fDown; //∞¯∞›
+    bool mouseDown2;
+    bool walkMouseDown;//ÎßàÏö∞Ïä§ ÏôºÏ™ΩÎ≤ÑÌäº Ïù¥Îèô
+    bool fDown; //????
+    bool rDown;//Ïû¨Ïû•Ï†Ñ
     bool isWalk;
     bool isRun;
     bool sDown1;//????????
@@ -33,8 +36,15 @@ public class PlayerController : MonoBehaviour
     bool sDown3;
     bool sDown4;
     bool isSwap;
-    bool isFireReady = true; //∞¯∞› ¡ÿ∫Ò
+    bool isReload; 
+    bool isFireReady = true; //???? ????
+    bool isBorder;
+    
 
+    private Camera camera;
+    private bool isMove; //Ïù¥ 3Í∞úÎäî ÎßàÏö∞Ïä§ Ïù¥ÎèôÏãú ÌïÑÏöîÌïú Î≥ÄÏàò
+    private Vector3 destination;
+   // private Vector3 moveVec;
 
     float mouseLocation;
     float jumpPower = 5;
@@ -44,17 +54,17 @@ public class PlayerController : MonoBehaviour
     Animator anim;
     Rigidbody playerRB;
     Camera characterCamera;
-
     GameObject nearObject;
     Weapon equipWeapon;
     int equipWeaponIndex = -1;
-    float fireDelay;//∞¯∞› µÙ∑π¿Ã
+    float fireDelay;//???? ??????
+
     private void Awake()
     {
         playerRB = GetComponent<Rigidbody>();
         anim = GetComponentInChildren<Animator>();
         characterCamera = GetComponentInChildren<Camera>();
-        mouseDown = Input.GetMouseButtonDown(0);
+        camera = Camera.main;   
     }
 
 
@@ -70,7 +80,18 @@ public class PlayerController : MonoBehaviour
         Move();
         Jump();
         Attack();
-       // LookMouseCursor();
+        Reload();
+        //ReloadOut();
+
+        walkMouseDown = Input.GetMouseButton(0);
+        MouseWalk();
+
+        mouseDown = Input.GetMouseButton(0);
+        LookMouseCursor();
+
+        mouseDown2 = Input.GetMouseButton(1);
+        LookMouseCursor2();
+
         look();
         Interaction();
         Swap();
@@ -81,37 +102,64 @@ public class PlayerController : MonoBehaviour
 
     void Move()
     {
-        verticalInput = Input.GetAxis("Vertical");
-        horizontalInput = Input.GetAxis("Horizontal");
-        isRun = Input.GetButton("Run");
-        fDown = Input.GetButton("Fire1");//∞¯∞›
-        iDown = Input.GetButtonDown("Interaction");//??????????
-        sDown1 = Input.GetButtonDown("Swap1");//????????
-        sDown2 = Input.GetButtonDown("Swap2");
-        sDown3 = Input.GetButtonDown("Swap3");
-        //sDown4 = Input.GetButtonDown("Swap4");
-
-        anim.SetBool("isWalk", moveVec != Vector3.zero);
-        anim.SetBool("isRun", isRun);
-
-        moveVec = new Vector3(horizontalInput, 0, verticalInput).normalized;
-
-        if (isRun) //?????? ????
-        {
-            speed = 2;
-            transform.position += moveVec * speed * Time.deltaTime;
-            isRun = false;
            
+        if(destination != Vector3.zero) { 
+            Vector3 moveVec = destination - transform.position;
+            moveVec.Normalize();
+            transform.position += moveVec.normalized * Time.deltaTime * speed;
         }
-        if (isSwap || !isFireReady) // π´±‚ Ω∫ø“ π◊ ∞¯∞›¡ﬂø£ ¿Ãµø∫“∞°
+        else
         {
-            moveVec = Vector3.zero;
-        }
-        transform.position += moveVec * speed * Time.deltaTime;
-        
+            verticalInput = Input.GetAxis("Vertical");
+            horizontalInput = Input.GetAxis("Horizontal");
 
-      // transform.Translate(Vector3.forward * verticalInput * Time.deltaTime * speed);
-      // transform.Translate(Vector3.right * horizontalInput * Time.deltaTime * speed);
+            moveVec = new Vector3(horizontalInput, 0, verticalInput).normalized;
+        }   
+
+        if (Input.GetButtonDown("Run"))
+        {
+            isRun = !isRun; //Îã¨Î¶¨Í∏∞ ÌÜ†Í∏Ä ÏÑ§Ï†ï
+            anim.SetBool("isRun", isRun);
+        }
+            //isRun = Input.GetButton("Run");
+            fDown = Input.GetButton("Fire2");//????
+            rDown = Input.GetButtonDown("Reload");
+            iDown = Input.GetButtonDown("Interaction");//??????????
+            sDown1 = Input.GetButtonDown("Swap1");//????????
+            sDown2 = Input.GetButtonDown("Swap2");
+            sDown3 = Input.GetButtonDown("Swap3");
+            //sDown4 = Input.GetButtonDown("Swap4");
+
+            anim.SetBool("isWalk", moveVec != Vector3.zero);
+            //anim.SetBool("isRun", isRun);
+
+            
+
+            if (isRun) //?????? ????
+            {
+                speed = 2;
+                transform.position += moveVec.normalized * speed * Time.deltaTime;
+            }
+            if (isSwap || !isFireReady || isReload) // ???? ???? ?? ???????? ????????
+            {
+                moveVec = Vector3.zero;
+            }
+            if(!isBorder)
+                transform.position += moveVec.normalized * speed * Time.deltaTime;
+
+
+        // transform.Translate(Vector3.forward * verticalInput * Time.deltaTime * speed);
+        // transform.Translate(Vector3.right * horizontalInput * Time.deltaTime * speed);
+
+        if (destination != Vector3.zero)
+        {
+            if (Vector3.Distance(transform.position, destination) <= 0.1f)
+            {
+                destination = Vector3.zero;
+            }
+        }   
+
+
     }
 
     void Jump()
@@ -133,17 +181,46 @@ public class PlayerController : MonoBehaviour
         if(equipWeapon == null)
             return;
         
-        //∞¯∞› µÙ∑π¿Ãø° Ω√∞£¿ª ¥ı«ÿ¡÷∞Ì ∞¯∞›∞°¥… ø©∫Œ∏¶ »Æ¿Œ
+        //???? ???????? ?????? ???????? ???????? ?????? ????
         fireDelay += Time.deltaTime;
         isFireReady = equipWeapon.rate < fireDelay;
 
         if(fDown && isFireReady && !isSwap)
         {
-            equipWeapon.Use();//Weapon Ω∫≈©∏≥ø° º”¿« Use «‘ºˆ ªÁøÎ
-            //«ˆ¿Á µÈ∞Ì¿÷¥¬ π´±‚∞° ±Ÿ¡¢π´±‚∏È doSwing, ø¯∞≈∏Æπ´±‚∏È doShot æ÷¥œ∏ﬁ¿Ãº« ¿€µø(ªÔ«◊ø¨ªÍ¿⁄)
+            equipWeapon.Use();//Weapon ???????? ???? Use ???? ????
+            //???? ???????? ?????? ?????????? doSwing, ???????????? doShot ?????????? ????(??????????)
             anim.SetTrigger(equipWeapon.type == Weapon.Type.Melee ? "doSwing" : "doShot");
             fireDelay = 0;
         }
+    }
+
+    void Reload()
+    {
+        if(equipWeapon == null)
+            return;
+        if (equipWeapon.type == Weapon.Type.Melee)
+            return;
+        if (ammo <= 0)
+            return;
+        if(rDown && !isjump && !isSwap && isFireReady && !isReload)
+        {
+            anim.SetTrigger("doReload");
+            isReload = true;
+
+            Invoke("ReloadOut", 1.7f);//Ïû¨Ïû•Ï†ÑÏÜçÎèÑ
+        }
+        
+    }
+
+    void ReloadOut()
+    {
+        int reAmmo = ammo < equipWeapon.maxAmmo ? ammo : equipWeapon.maxAmmo; //reAmmo = ÌòÑÏû¨ Îì§Í≥†ÏûàÎäî Î¨¥Í∏∞Ïùò ÌÉÑÏ∞ΩÏÜç ÌÉÑÏïΩÏù¥ ÏµúÎåÄ Ïû•ÌÉÑÏàòÎ≥¥Îã§ Ï†ÅÎã§Îäî Ï°∞Í±¥Ïù¥ Ï∞∏ÏùºÎïê ÌòÑÏû¨ Ïû•ÌÉÑÏàò, Í±∞ÏßìÏùºÎïê ÏµúÎåÄ Ïû•ÌÉÑÏàò
+        reAmmo -= equipWeapon.curAmmo;
+        equipWeapon.curAmmo += reAmmo;
+        ammo -= reAmmo;
+        //equipWeapon.curAmmo = reAmmo;//ÌòÑÏû¨ Îì§Í≥†ÏûàÎäî Î¨¥Í∏∞Ïùò ÌÉÑÏ∞ΩÏÜç ÌÉÑÏïΩÏàòÎäî reAmmo  
+        //ammo -= reAmmo; //Ïû¨Ïû•Ï†ÑÏãú ÌîåÎ†àÏù¥Ïñ¥Í∞Ä Í∞ñÍ≥†ÏûàÎäî ÌÉÑÏïΩÏùÄ Í∑∏ÎßåÌÅº Ï§ÑÏñ¥Îì¨
+        isReload = false;
     }
 
     void OnCollisionEnter(Collision collision)
@@ -170,6 +247,7 @@ public class PlayerController : MonoBehaviour
                         ammo = maxAmmo;
                     }
                     break;
+
                 case Item.Type.Coin:
                     coin += item.value;
                     if (coin > maxCoin)
@@ -177,6 +255,7 @@ public class PlayerController : MonoBehaviour
                         coin = maxCoin;
                     }
                     break;
+
                 case Item.Type.Health:
                     health += item.value;
                     if (health > maxHealth)
@@ -184,6 +263,7 @@ public class PlayerController : MonoBehaviour
                         health = maxHealth;
                     }
                     break;
+
                 case Item.Type.Grenade:
                     if (hasGrenades == maxHasGrenades)
                         return;
@@ -214,19 +294,19 @@ public class PlayerController : MonoBehaviour
     }
     void Swap()
     { //????????
-        if (sDown1 && (!hasWeapon[0] || equipWeaponIndex == 0)) // ?????? ???????? 1,2,3,???? ?????? ??????????                                                  
-        {                                                        // ???? ????1?? ?????? ?????????? ???????? ???? ????. ???? ?????? ???????? ???????? ???? ????. ???? ??????
+        if (sDown1 && (!hasWeapon[0] || equipWeaponIndex == 0))                                            
+        {                                                       
             return;
         }
-        if (sDown2 && (!hasWeapon[0] || equipWeaponIndex == 1))
+        if (sDown2 && (!hasWeapon[1] || equipWeaponIndex == 1))
         {
             return;
         }
-        if (sDown3 && (!hasWeapon[0] || equipWeaponIndex == 2))
+        if (sDown3 && (!hasWeapon[2] || equipWeaponIndex == 2))
         {
             return;
         }
-       /* if (sDown4 && (!hasWeapon[0] || equipWeaponIndex == 3))
+       /* if (sDown4 && (!hasWeapon[3] || equipWeaponIndex == 3))
         {
             return;
         } */
@@ -283,15 +363,84 @@ public class PlayerController : MonoBehaviour
 
     void LookMouseCursor()
     {
-            Ray ray = characterCamera.ScreenPointToRay(Input.mousePosition);
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             RaycastHit hitResult;
         if (mouseDown)
         {
+            Debug.Log("mouse down");
             if (Physics.Raycast(ray, out hitResult))
             {
                 Vector3 mourDir = new Vector3(hitResult.point.x, transform.position.y, hitResult.point.z) - transform.position;
+                mourDir.y = 0;
                 transform.forward = mourDir;
+                Debug.Log("hit result : " +  hitResult);
             }
         }
+    }
+
+    void LookMouseCursor2()
+    {
+        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        RaycastHit hitResult;
+        if (mouseDown2)
+        {
+            Debug.Log("mouse down2");
+            if (Physics.Raycast(ray, out hitResult))
+            {
+                Vector3 mourDir = new Vector3(hitResult.point.x, transform.position.y, hitResult.point.z) - transform.position;
+                mourDir.y = 0;
+                transform.forward = mourDir;
+                Debug.Log("hit result : " + hitResult);
+            }
+        }
+    }
+
+    void MouseWalk()
+    {
+          if (!isSwap || isFireReady || !isReload || !fDown)
+            {
+                if (Input.GetMouseButtonDown(0))
+                {
+                     Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+                     RaycastHit hitResult2;
+                     if (Physics.Raycast(ray, out hitResult2))
+                     {
+                        SetDestination(hitResult2.point);
+                     }
+
+                     moveVec = destination - transform.position;
+
+                   
+                    //transform.position += des.normalized * Time.deltaTime * speed;
+                    //Quaternion toRotation = Quaternion.FromToRotation(transform.forward, des.normalized);
+                    //transform.rotation = Quaternion.Lerp(transform.rotation, toRotation, speed * Time.deltaTime);
+                }
+                
+               
+           }
+        
+    }
+
+   
+    private void SetDestination(Vector3 dest)
+    {
+        destination = dest;
+    }
+
+    void FreezeRotation()
+    {
+        playerRB.angularVelocity = Vector3.zero;
+    }
+
+    void StopToWall()
+    {
+        Debug.DrawRay(transform.position, transform.forward * 5, Color.green);
+        isBorder = Physics.Raycast(transform.position, transform.forward, 1, LayerMask.GetMask("Wall")); //"Wall"ÌÉúÍ∑∏ Í∑ºÏ≤òÏóêÏÑúÎäî Ïù¥Îèô Î∂àÍ∞Ä 
+    }
+
+    void FixedUpdate()
+    {
+        FreezeRotation();
+        StopToWall();
     }
 }

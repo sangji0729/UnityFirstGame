@@ -8,6 +8,8 @@ public class Weapon : MonoBehaviour
     public Type type;
     public int damage;//데미지
     public float rate;//공격속도
+    public int maxAmmo;//현재 무기의 최대 장탄수
+    public int curAmmo;//현재 무기의 탄약
     public BoxCollider meleeArea;//근접공격 공격범위
     public TrailRenderer trailEffect;//근접공격 공격효과
     public Transform bulletPos;
@@ -22,8 +24,9 @@ public class Weapon : MonoBehaviour
             StopCoroutine("Swing"); //코루틴정지 함수
             StartCoroutine("Swing");//코루틴을 호출할땐 StartCoroutine 선언후 괄호안에 코루틴함수를 문자열로 작성
         }
-        else if(type == Type.Range)
+        else if(type == Type.Range && curAmmo > 0)
         {
+            curAmmo--;
             StartCoroutine("Shot");
         }
     }
@@ -52,7 +55,7 @@ public class Weapon : MonoBehaviour
         GameObject intantBullet = Instantiate(bullet, bulletPos.position, bulletPos.rotation);//총알 오브젝트
         Rigidbody bulletRigid = intantBullet.GetComponent<Rigidbody>();
         bulletRigid.velocity = bulletPos.forward * 50;//총알속도
-
+        
         yield return null;
 
         //2. 탄피 배출

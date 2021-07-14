@@ -4,36 +4,63 @@ using UnityEngine;
 
 public class EnemyStats : MonoBehaviour
 {
-    private float HP;
-    private float speed = 0.1f;
-    private float move;
-    private Rigidbody enemyRB;
-    private GameObject player;
-    // Start is called before the first frame update
-   
+    public int maxHealth;
+    public int curHealth;
 
-    void Start()
+    Rigidbody enemyRB;
+    BoxCollider boxCollider;
+    Material mat;
+
+    void Awake()
     {
         enemyRB = GetComponent<Rigidbody>();
-        player = GameObject.Find("Player");
-        HP = 100;
+        boxCollider = GetComponent<BoxCollider>();
+        mat = GetComponent<MeshRenderer>().material; //Material? getComponent ??? <MeshRenderer>().material ? ?????
     }
 
-    // Update is called once per frame
-    void Update()
+    void OnTriggerEnter(Collider other)
     {
-        enemyFollow();
+        if(other.tag == "Melee")
+        {
+            Weapon weapon = other.GetComponent<Weapon>();
+            curHealth -= weapon.damage;
+            Vector3 reactVec = transform.position - other.transform.position;
+
+            StartCoroutine(OnDamage(reactVec));
+
+
+        }
+        else if(other.tag == "Bullet")
+        {
+            Bullet bullet = other.GetComponent<Bullet>();
+            curHealth -= bullet.damage;
+            Vector3 reactVec = transform.position - other.transform.position;
+            Destroy(other.gameObject);
+            StartCoroutine(OnDamage(reactVec));
+        }
     }
 
-    void enemyFollow()
+    IEnumerator OnDamage(Vector3 reactVec)
     {
-        //적이 플레이어로 다가옴
-        enemyRB.AddForce((player.transform.position - transform.position).normalized * speed, ForceMode.Impulse);
+        mat.color = Color.red;
+        yield return new WaitForSeconds(0.1f);
+
+        if(curHealth > 0)
+        {
+            mat.color = Color.white;
+        }
+        else if(curHealth <= 0)
+        {
+            mat.color = Color.gray;
+            gameObject.layer = 14;
+
+            reactVec = reactVec.normalized;
+            reactVec += Vector3.up;
+
+            enemyRB.AddForce(reactVec * 1, ForceMode.Impulse);
+
+            Destroy(gameObject, 4);
+        }
     }
 
-    void look()
-    {
-        //움직이는 방향으로 캐릭터가 바라보기
-        transform.LookAt(transform.position);
-    }
 }
