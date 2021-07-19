@@ -13,6 +13,7 @@ public class PlayerController : MonoBehaviour
     public int coin;
     public int health;
     public int hasGrenades;
+    public GameObject grenadeObj;
 
     public int maxAmmo; //탄약 최대 소지량
     public int maxCoin;
@@ -28,6 +29,7 @@ public class PlayerController : MonoBehaviour
     bool mouseDown2;
     bool walkMouseDown;//마우스 왼쪽버튼 이동
     bool fDown; //????
+    bool gDown; //수류탄 투척
     bool rDown;//재장전
     bool isWalk;
     bool isRun;
@@ -81,6 +83,7 @@ public class PlayerController : MonoBehaviour
         Jump();
         Attack();
         Reload();
+        Grenade();
         //ReloadOut();
 
         walkMouseDown = Input.GetMouseButton(0);
@@ -123,12 +126,13 @@ public class PlayerController : MonoBehaviour
         }
             //isRun = Input.GetButton("Run");
             fDown = Input.GetButton("Fire2");//????
+            gDown = Input.GetButtonDown("Fire1");
             rDown = Input.GetButtonDown("Reload");
             iDown = Input.GetButtonDown("Interaction");//??????????
             sDown1 = Input.GetButtonDown("Swap1");//????????
             sDown2 = Input.GetButtonDown("Swap2");
             sDown3 = Input.GetButtonDown("Swap3");
-            //sDown4 = Input.GetButtonDown("Swap4");
+            sDown4 = Input.GetButtonDown("Swap4");
 
             anim.SetBool("isWalk", moveVec != Vector3.zero);
             //anim.SetBool("isRun", isRun);
@@ -174,6 +178,34 @@ public class PlayerController : MonoBehaviour
             infiniteJump = true;
             
         }
+    }
+
+    void Grenade()
+    {
+        if(hasGrenades == 0)
+        {
+            return;
+        }
+        if(gDown && !isReload && !isSwap)
+        {
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            RaycastHit hitResult;
+            if (Physics.Raycast(ray, out hitResult, 100))
+            {
+                Vector3 nextVec = hitResult.point - transform.position;
+                nextVec.y = 2;
+
+                GameObject instantGrenade = Instantiate(grenadeObj, transform.position, transform.rotation);
+                Rigidbody rigidGrenade = instantGrenade.GetComponent<Rigidbody>();
+                rigidGrenade.AddForce(nextVec, ForceMode.Impulse);
+                rigidGrenade.AddTorque(Vector3.back * 10, ForceMode.Impulse);
+
+                hasGrenades--;
+                grenades[hasGrenades].SetActive(false);
+            }
+            
+        }
+        
     }
 
     void Attack()
@@ -306,19 +338,19 @@ public class PlayerController : MonoBehaviour
         {
             return;
         }
-       /* if (sDown4 && (!hasWeapon[3] || equipWeaponIndex == 3))
+        if (sDown4 && (!hasWeapon[3] || equipWeaponIndex == 3))
         {
             return;
-        } */
+        } 
 
 
         int weaponIndex = -1;
         if (sDown1) weaponIndex = 0;
         if (sDown2) weaponIndex = 1;
         if (sDown3) weaponIndex = 2;
-       // if (sDown4) weaponIndex = 3;
+        if (sDown4) weaponIndex = 3;
 
-        if ((sDown1 || sDown2 || sDown3) && !isjump)
+        if ((sDown1 || sDown2 || sDown3 || sDown4) && !isjump)
         {
             if(equipWeapon != null)
                  equipWeapon.gameObject.SetActive(false);

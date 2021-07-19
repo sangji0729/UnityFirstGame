@@ -6615,6 +6615,14 @@ PrefabInstance:
       value: 9
       objectReference: {fileID: 0}
     - target: {fileID: 1337519775, guid: 8f5e135a19626f544908fc8f156144b9, type: 3}
+      propertyPath: grenadeObj
+      value: 
+      objectReference: {fileID: 7095593960107140537, guid: 45cbb1398a3db48fa839aed169b127f3, type: 3}
+    - target: {fileID: 1337519775, guid: 8f5e135a19626f544908fc8f156144b9, type: 3}
+      propertyPath: weapons.Array.data[3]
+      value: 
+      objectReference: {fileID: 7095593960107140537, guid: 45cbb1398a3db48fa839aed169b127f3, type: 3}
+    - target: {fileID: 1337519775, guid: 8f5e135a19626f544908fc8f156144b9, type: 3}
       propertyPath: grenades.Array.data[0]
       value: 
       objectReference: {fileID: 2064832130}
